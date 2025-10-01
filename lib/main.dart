@@ -10,7 +10,7 @@ void main() {
           title: Text('Баженов Максим Валерьевич'),
         ),
         body: Padding(
-          padding: EdgeInsetsGeometry.symmetric(horizontal: 15),
+          padding: EdgeInsets.symmetric(horizontal: 15),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
