@@ -26,16 +26,6 @@ class ResultListScreen extends StatefulWidget {
 }
 
 class _ResultListScreenState extends State<ResultListScreen> {
-  @override
-  void initState() {
-    super.initState();
-    _onLoad();
-  }
-
-  void _onLoad() {
-    context.read<ResultScreenCubit>().loadResults();
-  }
-
   Widget build(BuildContext context) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
@@ -52,6 +42,8 @@ class _ResultListScreenState extends State<ResultListScreen> {
             )
         ),
         BlocBuilder<ResultScreenCubit, ResultScreenState>(builder: (context, state) {
+          BlocProvider.of<ResultScreenCubit>(context).loadResults();
+
           if (state is ResultScreenUpdateResultState) {
             return Column(
               children: state.results.map((result) {
