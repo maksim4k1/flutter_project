@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_project/screens/cubit/main_screen_cubit.dart';
 import 'package:flutter_project/screens/cubit/main_screen_state.dart';
+import 'package:flutter_project/screens/result_screen_provider.dart';
 
 class MainScreen extends StatelessWidget {
   @override
@@ -11,6 +12,13 @@ class MainScreen extends StatelessWidget {
         backgroundColor: Colors.indigo,
         titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
         title: Text('Баженов Максим Валерьевич'),
+        leading: IconButton(icon: Icon(Icons.history, color: Colors.white), onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => ResultScreenProvider(),
+            ),
+          );
+        }),
       ),
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: 15),
@@ -35,7 +43,7 @@ class _MyFormScreenState extends State<MyFormScreen> {
     return Form(
       key: _formKey,
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
