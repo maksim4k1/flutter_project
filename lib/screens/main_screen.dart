@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_project/screens/cubit/main_screen_cubit.dart';
-import 'package:flutter_project/screens/cubit/main_screen_state.dart';
-import 'package:flutter_project/screens/result_screen_provider.dart';
+import 'package:flutter_project/screens/cubit/exchange_rate_cubit.dart';
+import 'package:flutter_project/screens/cubit/exchange_rate_state.dart';
 
 class MainScreen extends StatelessWidget {
   @override
@@ -10,126 +9,99 @@ class MainScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.indigo,
-        titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
-        title: Text('Баженов Максим Валерьевич'),
-        leading: IconButton(icon: Icon(Icons.history, color: Colors.white), onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => ResultScreenProvider(),
-            ),
-          );
-        }),
+        titleTextStyle: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+        title: Text('Курсы валют'),
       ),
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: 15),
-        child: MyFormScreen(),
+        child: MyScreenState(),
       ),
     );
   }
 }
 
-class MyFormScreen extends StatefulWidget {
+class MyScreenState extends StatelessWidget {
+  String? _code;
+
   @override
-  _MyFormScreenState createState() => _MyFormScreenState();
-}
-
-class _MyFormScreenState extends State<MyFormScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _aField = TextEditingController();
-  final _bField = TextEditingController();
-  bool _agreement = false;
-
   Widget build(BuildContext context) {
-    return Form(
-      key: _formKey,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-              padding: EdgeInsets.only(top: 10),
-              child: Text(
-                'Квадрат суммы',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              )
-          ),
-          Padding(
-              padding: EdgeInsets.symmetric(vertical: 2),
-              child: Text(
-                'Введите число a:',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.black38,
-                ),
-              )
-          ),
-          TextFormField(
-            keyboardType: TextInputType.number,
-            controller: _aField,
-            validator: (value) {
-              if(value!.isEmpty) return "Введите число a";
-              if (double.tryParse(value) == null) return "Введите корректное число";
-              return null;
-            },
-          ),
-          Padding(
-              padding: EdgeInsets.symmetric(vertical: 2),
-              child: Text(
-                'Введите число b:',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.black38,
-                ),
-              )
-          ),
-          TextFormField(
-            keyboardType: TextInputType.number,
-            controller: _bField,
-            validator: (value) {
-              if(value!.isEmpty) return "Введите число b";
-              if (double.tryParse(value) == null) return "Введите корректное число";
-              return null;
-            },
-          ),
-          CheckboxListTile(
-            value: _agreement,
-            title: Text("Я согласен на обработку данных"),
-            onChanged: (value) {
-              setState(() {
-                _agreement = value!;
-              });
-            },
-          ),
-          ElevatedButton(onPressed: () {
-            if (_formKey.currentState!.validate()) {
-              if (_agreement) {
-                BlocProvider.of<MainScreenCubit>(context).calculateResult(
-                    double.parse(_aField.text),
-                    double.parse(_bField.text)
-                );
-              }
-            }
-          }, child: Text("Рассчитать")),
-          BlocBuilder<MainScreenCubit, MainScreenState>(builder: (context, state) {
-            if (state is MainScreenUpdateResultState) {
-              return Padding(
-                padding: EdgeInsets.only(top: 10, left: 10),
+    return BlocBuilder<ExchangeRateCubit, ExchangeRateState>(
+      builder: (context, state) {
+        if (state is ExchangeRateLoadingState) {
+          BlocProvider.of<ExchangeRateCubit>(context).loadExchangeRate(_code);
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (state is ExchangeRateErrorState) {
+          return const Center(child: Text("Произошла ошибка"));
+        }
+
+        if (state is ExchangeRateLoadedState) {
+          final conversionRates = state.exchange_rate.conversionRates!;
+          final String baseCode = state.exchange_rate.baseCode!;
+
+          final Map<String, dynamic> jsonMap = conversionRates.toJson();
+
+          final rateList = jsonMap.entries.map((entry) {
+            return {
+              "code": entry.key,
+              "value": entry.value,
+            };
+          }).toList();
+
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: EdgeInsets.only(top: 10, bottom: 10),
                 child: Text(
-                  "Сумма квадартов чисел a и b равна:\n${state.result}",
+                  "Курсы валют к ${baseCode}",
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 22,
                     fontWeight: FontWeight.bold,
                   ),
-                )
-              );
-            }
-            return Container();
-          }),
-        ],
-      ),
+                ),
+              ),
+              Expanded(child: _buildRatesList(rateList, baseCode)),
+            ],
+          );
+        }
+
+        return Container();
+      },
+    );
+  }
+
+  Widget _buildRatesList(List<Map<String, dynamic>> rates, String baseCode) {
+    return ListView.builder(
+      itemCount: rates.length,
+      itemBuilder: (context, index) {
+        final rate = rates[index];
+        return Card(
+          margin: EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+          child: ListTile(
+            title: Text(
+              rate["code"],
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            subtitle: Text(
+              "Курс к ${baseCode}: ${rate["value"]}",
+              style: TextStyle(fontSize: 14),
+            ),
+            trailing: TextButton(
+              onPressed: () {
+                _code = rate["code"];
+                BlocProvider.of<ExchangeRateCubit>(context).loadExchangeRate(_code);
+              },
+              child: Text("Выбрать", style: TextStyle(color: Colors.indigo)),
+            ),
+          ),
+        );
+      },
     );
   }
 }
