@@ -20,7 +20,12 @@ class MainScreen extends StatelessWidget {
   }
 }
 
-class MyScreenState extends StatelessWidget {
+class MyScreenState extends StatefulWidget {
+  @override
+  _MyScreenState createState() => _MyScreenState();
+}
+
+class _MyScreenState extends State<MyScreenState> {
   String? _code;
 
   @override
@@ -94,7 +99,9 @@ class MyScreenState extends StatelessWidget {
             ),
             trailing: TextButton(
               onPressed: () {
-                _code = rate["code"];
+                setState(() {
+                  _code = rate["code"];
+                });
                 BlocProvider.of<ExchangeRateCubit>(context).loadExchangeRate(_code);
               },
               child: Text("Выбрать", style: TextStyle(color: Colors.indigo)),
